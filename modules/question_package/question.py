@@ -20,6 +20,7 @@ class Question:
         self.qu_mode = mode
         self.qu_image_base64 = self.qu_image_to_base64(self.qu_image_path)
         self.qu_correct_answer = answer
+        self.qu_variants = variants
 
         self.threshold_similarity = threshold_similarity
         self.threshold_length_diff = threshold_length_diff
