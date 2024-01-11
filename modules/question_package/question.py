@@ -1,64 +1,93 @@
-import base64
-import difflib
+from enum import Enum
+import inspect
 
-if __name__ == '__main__': print('question module')
+class QuestionModes(Enum):
+    CHOOSE = 'choose'
+    CHOOSE_ONE = 'choose_one'
+    INPUT = 'input'
 
 class Question:
-    def __init__(self,
-                title='Это заголовок теста?',
-                description='Возможно, это не тест...',
-                image='путь/к/изображению',
-                mode='input',
-                variants=['да'],
-                answer='правда',
-                threshold_similarity=0.4,
-                threshold_length_diff=2):
-        
-        self.qu_title = self.qu_format_string(title)
-        self.qu_description = self.qu_format_string(description)
-        self.qu_image_path = image
-        self.qu_mode = mode
-        self.qu_image_base64 = self.qu_image_to_base64(self.qu_image_path)
-        self.qu_correct_answer = answer
-        self.qu_variants = variants
+    def __init__(self, title, description=None, mode=None, variants=None, correct_answer=None, threshold_similarity=0.4, threshold_length_diff=2):
+        self.title = title
+        self.description = description
+        self.mode = mode
+        self.variants = variants
+        self.correct_answer = correct_answer
 
         self.threshold_similarity = threshold_similarity
         self.threshold_length_diff = threshold_length_diff
 
-        known_modes = ['choose_one', 'input']
+        self.temp_user_answer_selected = None
 
-        if self.qu_mode in known_modes:
-            match self.qu_mode:
-                case 'choose_one':
-                    if not variants:
-                        raise ValueError("Варианты не должны быть пустыми для режима 'choose_one'")
-                    self.qu_variants = variants
-                    if answer.lower() not in [variant.lower() for variant in variants]:
-                        raise ValueError("Ответ должен быть одним из вариантов для режима 'choose_one'")
+        self.user_answer = None
 
-    def qu_format_string(self, string):
-        string = string.capitalize()
-        punctuation_marks = ['.', '!', '?']
-        if not any(string.endswith(p) for p in punctuation_marks):
-            string += "?"
-        return string
+        self.submitted = False
+        self.validate_question()
 
-    def qu_image_to_base64(self, image_path):
-        try:
-            with open(image_path, "rb") as img_file:
-                img_bytes = img_file.read()
-                img_base64 = base64.b64encode(img_bytes).decode('utf-8')
-                return img_base64
-        except FileNotFoundError:
-            print("Файл не найден")
+    def set_temp_user_answer_selected(self, selected):
+        caller_frame = inspect.currentframe().f_back
+        caller_func_name = caller_frame.f_code.co_name
+        print(f'Caller {caller_func_name} = {selected}')
+        self.temp_user_answer_selected = selected
 
-    def check_answer(self, user_answer):
+    def check_answer(self):
+        if not self.user_answer:
+            raise ValueError(f"No user_answer set")
+        if self.mode == QuestionModes.INPUT:
+            return self.user_answer.lower() == self.correct_answer.lower()
 
-        normalized_correct_answer = self.qu_correct_answer.lower()
-        normalized_user_answer = user_answer.lower()
-        diff_length = len(normalized_user_answer.split()) - len(normalized_correct_answer.split())
-        diff_characters = len(normalized_user_answer) - len(normalized_correct_answer)
-        similarity_ratio = difflib.SequenceMatcher(None, normalized_correct_answer, normalized_user_answer, autojunk=True).ratio()
-        threshold_similarity = 0.4
-        threshold_length_diff = 2
-        return similarity_ratio >= threshold_similarity and abs(diff_length) <= threshold_length_diff and abs(diff_characters) <= threshold_length_diff
+        elif self.mode == QuestionModes.CHOOSE_ONE:
+            return self.user_answer in self.correct_answer
+
+        elif self.mode == QuestionModes.CHOOSE:
+            return self.user_answer == self.correct_answer
+
+    def validate_question(self):
+        if self.mode not in QuestionModes:
+            raise ValueError(f"Unknown question mode: {self.mode}")
+
+        if self.mode == QuestionModes.INPUT:
+            if self.variants is not None:
+                raise ValueError("Variants should be None for 'input' mode.")
+
+        elif self.mode == QuestionModes.CHOOSE_ONE:
+            if self.variants is None or not self.variants or self.correct_answer not in self.variants or not isinstance(self.correct_answer, str):
+                raise ValueError("Invalid configuration for 'choose_one' mode.")
+
+        elif self.mode == QuestionModes.CHOOSE:
+            if self.variants is None or not self.variants or not all(isinstance(variant, str) for variant in self.variants) or not isinstance(self.correct_answer, list) or not all(item in self.variants for item in self.correct_answer):
+                raise ValueError("Invalid configuration for 'choose' mode.")
+
+# # Example usage:
+# if __name__ == '__main__':
+#     question_input = Question(
+#         title='Sample Input Question',
+#         description='This is a sample input question.',
+#         mode=QuestionModes.INPUT,
+#         correct_answer='Sample Answer'
+#     )
+
+#     question_choose_one = Question(
+#         title='Sample Choose One Question',
+#         description='This is a sample choose one question.',
+#         mode=QuestionModes.CHOOSE_ONE,
+#         variants=['Option 1', 'Option 2', 'Option 3'],
+#         correct_answer='Option 2'
+#     )
+
+#     question_choose = Question(
+#         title='Sample Choose Question',
+#         description='This is a sample choose question.',
+#         mode=QuestionModes.CHOOSE,
+#         variants=['Option A', 'Option B', 'Option C', 'Option D'],
+#         correct_answer=['Option A', 'Option C']
+#     )
+
+#     question_input.set_user_answer('Sample Answer')
+#     print(question_input.check_answer())  # Output: True
+
+#     question_choose_one.set_user_answer('Option 2')
+#     print(question_choose_one.check_answer())  # Output: True
+
+#     question_choose.set_user_answer(['Option A', 'Option D'])
+#     print(question_choose.check_answer())  # Output: False
