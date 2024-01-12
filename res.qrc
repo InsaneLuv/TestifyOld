@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>icons/grid.svg</file>
+    <file>icons/quiz.svg</file>
+    <file>icons/lists.svg</file>
+    <file>icons/lists.svg</file>
+    <file>icons/dataset.svg</file>
+    <file>icons/person.svg</file>
+    <file>icons/timer.svg</file>
+  </qresource>
+</RCC>
