@@ -25,23 +25,23 @@ class QuizWindow(QMainWindow):
         self.__setup_btn_callbacks()
 
     def __setup_header(self):
-        self.ui.label_22.setText(self.quizTitle)
-        self.ui.label_6.setText(self.userName)
+        self.ui.label_title.setText(self.quizTitle)
+        self.ui.label_user.setText(self.userName)
         self.timer_manager.start_timer()
 
     def __setup_question(self):
-        self.ui.textEdit.setText(self.QuizManager.selected_question.title)
+        self.ui.question_text.setText(self.QuizManager.selected_question.title)
         self.set_remain()
         self.setup_answer_widget()
     
     def __setup_btn_callbacks(self):
         self.ui.btn_end.clicked.connect(self.handle_btn_end)
         self.ui.btn_save.clicked.connect(self.handle_btn_save)
-        self.ui.btn_back.clicked.connect(self.handle_btn_back)
+        self.ui.btn_prev.clicked.connect(self.handle_btn_prev)
         self.ui.btn_next.clicked.connect(self.handle_btn_next)
 
     def update_timer_label(self, remaining_time):
-        self.ui.label_18.setText(remaining_time.toString("hh:mm:ss"))
+        self.ui.label_timer.setText(remaining_time.toString("hh:mm:ss"))
         if remaining_time == QTime(0, 0):
             self.ended = True
             self.ended_event()
@@ -51,19 +51,20 @@ class QuizWindow(QMainWindow):
         self.timer_manager.stop_timer()
 
     def disable_buttons(self):
-        self.ui.btn_back.setEnabled(False)
+        self.ui.btn_prev.setEnabled(False)
         self.ui.btn_next.setEnabled(False)
     
     def set_remain(self):
         remain = len(self.QuizManager.get_unsubmitted())
-        self.ui.label_20.setText(str(remain))
+        self.ui.label_remain.setText(str(remain))
         if remain == 1:
             self.ended = True
             self.ended_event()
 
     def handle_btn_end(self):
-        self.clear_layout(self.ui.answer_GroupBox.layout())
         self.QuizManager.count_grade()
+        self.ended = True
+        self.ended_event()
 
     def handle_btn_save(self):
         self.QuizManager.selected_question.submitted = True
@@ -73,9 +74,9 @@ class QuizWindow(QMainWindow):
         else:
             self.ui.btn_save.setEnabled(False)
             self.set_remain()
-            self.ui.answer_GroupBox.setEnabled(False)
+            self.ui.answer.setEnabled(False)
 
-    def handle_btn_back(self):
+    def handle_btn_prev(self):
         self.QuizManager.scroll_question('prev')
         self.__setup_question()
 
@@ -84,31 +85,31 @@ class QuizWindow(QMainWindow):
         self.__setup_question()
 
     def setup_answer_widget(self):
-        self.clear_layout(self.ui.answer_GroupBox.layout())
+        self.clear_layout(self.ui.answer.layout())
         
         self.answer_widgets = []
 
         question = self.QuizManager.selected_question
-
+        self.ui.label_question_num.setText(str(f'Вопрос #{self.QuizManager.selected_question_index+1}'))
         if question.mode == QuestionModes.INPUT:
             input_lineedit = QLineEdit(self)
             input_lineedit.setPlaceholderText("Введите ответ")
             input_lineedit.textChanged.connect(self.handle_answer_changed)
-            self.ui.answer_GroupBox.layout().addWidget(input_lineedit)
+            self.ui.answer.layout().addWidget(input_lineedit)
             self.answer_widgets.append(input_lineedit)
 
         if question.mode == QuestionModes.CHOOSE_ONE:
             for variant in question.variants:
                 radio_button = QRadioButton(variant, self)
                 radio_button.clicked.connect(self.handle_answer_changed)
-                self.ui.answer_GroupBox.layout().addWidget(radio_button)
+                self.ui.answer.layout().addWidget(radio_button)
                 self.answer_widgets.append(radio_button)
 
         if question.mode == QuestionModes.CHOOSE:
             for variant in question.variants:
                 checkbox = QCheckBox(variant, self)
                 checkbox.clicked.connect(self.handle_answer_changed)
-                self.ui.answer_GroupBox.layout().addWidget(checkbox)
+                self.ui.answer.layout().addWidget(checkbox)
                 self.answer_widgets.append(checkbox)
                 
         self.keep_choosen()
@@ -161,23 +162,23 @@ class QuizWindow(QMainWindow):
 
 if __name__ == '__main__':
     questions = [Question(
-        title='Sample Choose Question',
+        title='Что сказал максим когда вышел из кабинета',
         description='This is a sample choose question.',
         mode=QuestionModes.CHOOSE,
-        variants=['Option A', 'Option B', 'Option C', 'Option D'],
-        correct_answer=['Option A', 'Option C']
+        variants=['Уаааааааааааааааау', 'Уаааааааааааааааааааау', 'Эаааааааааааа', 'Можно богларку'],
+        correct_answer=['Уаааааааааааааааау', 'Можно богларку']
     ), Question(
-        title='Sample Choose Question2',
+        title='Что денис делает на работе',
         description='This is a sample choose question.',
         mode=QuestionModes.CHOOSE_ONE,
-        variants=['Option A', 'Option B', 'Option C', 'Option D'],
-        correct_answer='Option A'
+        variants=['Спит', 'Ест', 'Жрёт', 'Жрёт собачью похлёбку'],
+        correct_answer='Жрёт собачью похлёбку'
     ),
     Question(
-        title='Sample Choose Question3',
-        description='This is a sample choose question.',
+        title='Че говорит лариска',
+        description='',
         mode=QuestionModes.INPUT,
-        correct_answer='Option A'
+        correct_answer='По платному графику'
     )]
     app = QApplication(sys.argv)
     window = QuizWindow(questions, total_time_minutes=1, winTitle = 'Тест', quizTitle='Тест обычный', userName='Данила')
