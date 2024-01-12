@@ -2,72 +2,17 @@ from typing import Optional
 from PySide6.QtCore import QTimer, QTime, Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QCheckBox, QLineEdit, QRadioButton, QTextBrowser, QPushButton
 import sys
-from modules import Ui_MainWindow
-from modules import Question, QuestionModes
+from modules import Question, QuestionModes, Ui_MainWindow, QuizManager, TimerManager
 
-class QuizManager():
-    def __init__(self, questions):
-        self.questions = questions
-        self.selected_question = None
-        self.selected_question_index = 0
-    
-    def select_question(self):
-        for index, question in enumerate(self.questions):
-            if not question.submitted:
-                self.selected_question = question
-                self.selected_question_index = index
-                return question
-
-    def scroll_question(self, mode):
-        direction = 1 if mode == 'next' else -1
-        original_index = self.selected_question_index
-        while True:
-            self.selected_question_index = (self.selected_question_index + direction) % len(self.questions)
-            if self.selected_question_index == original_index:
-                break
-            if not self.questions[self.selected_question_index].submitted:
-                self.selected_question = self.questions[self.selected_question_index]
-                return self.selected_question
-
-    
-    def get_unsubmitted(self):
-        return [question for question in self.questions if not question.submitted]
-
-
-        
-
-class TimerManager:
-    def __init__(self, total_time_minutes, update_callback):
-        self.total_time_seconds = total_time_minutes * 60
-        self.elapsed_time_seconds = 0
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_timer)
-        self.update_callback = update_callback
-
-    def start_timer(self):
-        self.timer.start(1000)
-
-    def stop_timer(self):
-        self.timer.stop()
-
-    def update_timer(self):
-        self.elapsed_time_seconds += 1
-        remaining_time = self.calculate_remaining_time()
-        self.update_callback(remaining_time)
-
-        if remaining_time == QTime(0, 0):
-            self.timer.stop()
-
-    def calculate_remaining_time(self):
-        remaining_time_seconds = max(0, self.total_time_seconds - self.elapsed_time_seconds)
-        remaining_time = QTime(0, 0).addSecs(remaining_time_seconds)
-        return remaining_time
 
 class QuizWindow(QMainWindow):
-    def __init__(self, questions, total_time_minutes):
+    def __init__(self, questions, total_time_minutes, winTitle, quizTitle, userName):
         super(QuizWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.setWindowTitle(f"Testify | {winTitle}")
+        self.quizTitle = quizTitle
+        self.userName = userName
         self.QuizManager = QuizManager(questions)
         self.timer_manager = TimerManager(total_time_minutes, self.update_timer_label)
         self.ended = False
@@ -75,33 +20,50 @@ class QuizWindow(QMainWindow):
 
     def on_startup(self):
         self.QuizManager.select_question()
-        self.setup_question()
-        self.timer_manager.start_timer()
+        self.__setup_header()
+        self.__setup_question()
         self.__setup_btn_callbacks()
+
+    def __setup_header(self):
+        self.ui.label_22.setText(self.quizTitle)
+        self.ui.label_6.setText(self.userName)
+        self.timer_manager.start_timer()
+
+    def __setup_question(self):
+        self.ui.textEdit.setText(self.QuizManager.selected_question.title)
+        self.set_remain()
+        self.setup_answer_widget()
+    
+    def __setup_btn_callbacks(self):
+        self.ui.btn_end.clicked.connect(self.handle_btn_end)
+        self.ui.btn_save.clicked.connect(self.handle_btn_save)
+        self.ui.btn_back.clicked.connect(self.handle_btn_back)
+        self.ui.btn_next.clicked.connect(self.handle_btn_next)
 
     def update_timer_label(self, remaining_time):
         self.ui.label_18.setText(remaining_time.toString("hh:mm:ss"))
         if remaining_time == QTime(0, 0):
             self.ended = True
-            self.disable_buttons()
+            self.ended_event()
+
+    def ended_event(self):
+        self.disable_buttons()
+        self.timer_manager.stop_timer()
 
     def disable_buttons(self):
         self.ui.btn_back.setEnabled(False)
         self.ui.btn_next.setEnabled(False)
-
-    def setup_question(self):
-        self.ui.textEdit.setText(self.QuizManager.selected_question.title)
-        self.set_remain()
-        self.setup_answer_widget()
     
     def set_remain(self):
-        self.ui.label_20.setText(str(len(self.QuizManager.get_unsubmitted())))
+        remain = len(self.QuizManager.get_unsubmitted())
+        self.ui.label_20.setText(str(remain))
+        if remain == 1:
+            self.ended = True
+            self.ended_event()
 
-    def __setup_btn_callbacks(self):
-        # self.ui.btn_end.clicked.connect(self.handle_btn_end)
-        self.ui.btn_save.clicked.connect(self.handle_btn_save)
-        self.ui.btn_back.clicked.connect(self.handle_btn_back)
-        self.ui.btn_next.clicked.connect(self.handle_btn_next)
+    def handle_btn_end(self):
+        self.clear_layout(self.ui.answer_GroupBox.layout())
+        self.QuizManager.count_grade()
 
     def handle_btn_save(self):
         self.QuizManager.selected_question.submitted = True
@@ -115,11 +77,11 @@ class QuizWindow(QMainWindow):
 
     def handle_btn_back(self):
         self.QuizManager.scroll_question('prev')
-        self.setup_question()
+        self.__setup_question()
 
     def handle_btn_next(self):
         self.QuizManager.scroll_question('next')
-        self.setup_question()
+        self.__setup_question()
 
     def setup_answer_widget(self):
         self.clear_layout(self.ui.answer_GroupBox.layout())
@@ -218,6 +180,6 @@ if __name__ == '__main__':
         correct_answer='Option A'
     )]
     app = QApplication(sys.argv)
-    window = QuizWindow(questions, 0.05)
+    window = QuizWindow(questions, total_time_minutes=1, winTitle = 'Тест', quizTitle='Тест обычный', userName='Данила')
     window.show()
     sys.exit(app.exec())

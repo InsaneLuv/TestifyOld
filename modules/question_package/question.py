@@ -24,6 +24,10 @@ class Question:
         self.submitted = False
         self.validate_question()
 
+    def fill_not_submitted(self):
+        if not self.submitted:
+            self.submitted = True
+
     def set_temp_user_answer_selected(self, selected):
         caller_frame = inspect.currentframe().f_back
         caller_func_name = caller_frame.f_code.co_name
@@ -32,7 +36,10 @@ class Question:
 
     def check_answer(self):
         if not self.user_answer:
-            raise ValueError(f"No user_answer set")
+            if self.temp_user_answer_selected:
+                self.user_answer = self.temp_user_answer_selected
+            else:
+                return False
         if self.mode == QuestionModes.INPUT:
             return self.user_answer.lower() == self.correct_answer.lower()
 
@@ -57,37 +64,3 @@ class Question:
         elif self.mode == QuestionModes.CHOOSE:
             if self.variants is None or not self.variants or not all(isinstance(variant, str) for variant in self.variants) or not isinstance(self.correct_answer, list) or not all(item in self.variants for item in self.correct_answer):
                 raise ValueError("Invalid configuration for 'choose' mode.")
-
-# # Example usage:
-# if __name__ == '__main__':
-#     question_input = Question(
-#         title='Sample Input Question',
-#         description='This is a sample input question.',
-#         mode=QuestionModes.INPUT,
-#         correct_answer='Sample Answer'
-#     )
-
-#     question_choose_one = Question(
-#         title='Sample Choose One Question',
-#         description='This is a sample choose one question.',
-#         mode=QuestionModes.CHOOSE_ONE,
-#         variants=['Option 1', 'Option 2', 'Option 3'],
-#         correct_answer='Option 2'
-#     )
-
-#     question_choose = Question(
-#         title='Sample Choose Question',
-#         description='This is a sample choose question.',
-#         mode=QuestionModes.CHOOSE,
-#         variants=['Option A', 'Option B', 'Option C', 'Option D'],
-#         correct_answer=['Option A', 'Option C']
-#     )
-
-#     question_input.set_user_answer('Sample Answer')
-#     print(question_input.check_answer())  # Output: True
-
-#     question_choose_one.set_user_answer('Option 2')
-#     print(question_choose_one.check_answer())  # Output: True
-
-#     question_choose.set_user_answer(['Option A', 'Option D'])
-#     print(question_choose.check_answer())  # Output: False
