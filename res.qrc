@@ -1,16 +1,18 @@
 <RCC>
   <qresource prefix="icons">
-    <file>icons/exit.svg</file>
-    <file>icons/commit.svg</file>
-    <file>icons/next.svg</file>
-    <file>icons/prev.svg</file>
     <file>icons/check.svg</file>
-    <file>icons/min.svg</file>
-    <file>icons/grid.svg</file>
-    <file>icons/quiz.svg</file>
-    <file>icons/lists.svg</file>
+    <file>icons/commit.svg</file>
     <file>icons/dataset.svg</file>
+    <file>icons/exit.svg</file>
+    <file>icons/grid.svg</file>
+    <file>icons/lists.svg</file>
+    <file>icons/min.svg</file>
+    <file>icons/moon.svg</file>
+    <file>icons/next.svg</file>
     <file>icons/person.svg</file>
+    <file>icons/prev.svg</file>
+    <file>icons/quiz.svg</file>
+    <file>icons/sun.svg</file>
     <file>icons/timer.svg</file>
   </qresource>
 </RCC>

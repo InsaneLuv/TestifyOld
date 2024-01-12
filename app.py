@@ -1,7 +1,7 @@
+import sys
 from typing import Optional
 from PySide6.QtCore import QTimer, QTime, Qt
 from PySide6.QtWidgets import QApplication, QMainWindow, QCheckBox, QLineEdit, QRadioButton, QTextBrowser, QPushButton
-import sys
 from modules import Question, QuestionModes, Ui_MainWindow, QuizManager, TimerManager
 
 
@@ -42,13 +42,7 @@ class QuizWindow(QMainWindow):
 
     def update_timer_label(self, remaining_time):
         self.ui.label_timer.setText(remaining_time.toString("hh:mm:ss"))
-        if remaining_time == QTime(0, 0):
-            self.ended = True
-            self.ended_event()
-
-    def ended_event(self):
-        self.disable_buttons()
-        self.timer_manager.stop_timer()
+        if remaining_time == QTime(0, 0): self.ended = True
 
     def disable_buttons(self):
         self.ui.btn_prev.setEnabled(False)
@@ -57,24 +51,15 @@ class QuizWindow(QMainWindow):
     def set_remain(self):
         remain = len(self.QuizManager.get_unsubmitted())
         self.ui.label_remain.setText(str(remain))
-        if remain == 1:
-            self.ended = True
-            self.ended_event()
 
     def handle_btn_end(self):
         self.QuizManager.count_grade()
-        self.ended = True
-        self.ended_event()
 
     def handle_btn_save(self):
         self.QuizManager.selected_question.submitted = True
         self.QuizManager.selected_question.user_answer = self.QuizManager.selected_question.temp_user_answer_selected
         if not self.ended:
             self.handle_btn_next()
-        else:
-            self.ui.btn_save.setEnabled(False)
-            self.set_remain()
-            self.ui.answer.setEnabled(False)
 
     def handle_btn_prev(self):
         self.QuizManager.scroll_question('prev')
@@ -161,26 +146,29 @@ class QuizWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-    questions = [Question(
-        title='Что сказал максим когда вышел из кабинета',
-        description='This is a sample choose question.',
-        mode=QuestionModes.CHOOSE,
-        variants=['Уаааааааааааааааау', 'Уаааааааааааааааааааау', 'Эаааааааааааа', 'Можно богларку'],
-        correct_answer=['Уаааааааааааааааау', 'Можно богларку']
-    ), Question(
-        title='Что денис делает на работе',
+    questions = []
+    questions = [
+        Question(
+        title='Назовите столицу Франции',
         description='This is a sample choose question.',
         mode=QuestionModes.CHOOSE_ONE,
-        variants=['Спит', 'Ест', 'Жрёт', 'Жрёт собачью похлёбку'],
-        correct_answer='Жрёт собачью похлёбку'
+        variants=['Мадрид', 'Москва', 'Токио', 'Париж'],
+        correct_answer='Париж'
+    ), Question(
+        title='Что  на работе',
+        description='This is a sample choose question.',
+        mode=QuestionModes.CHOOSE_ONE,
+        variants=['Спит', 'Ест', 'Жрёт', 'похлёбку'],
+        correct_answer='похлёбку'
     ),
     Question(
-        title='Че говорит лариска',
+        title='Че говорит',
         description='',
         mode=QuestionModes.INPUT,
         correct_answer='По платному графику'
-    )]
+    )
+    ]
     app = QApplication(sys.argv)
-    window = QuizWindow(questions, total_time_minutes=1, winTitle = 'Тест', quizTitle='Тест обычный', userName='Данила')
+    window = QuizWindow(questions, total_time_minutes=10, winTitle = 'Тест на внимательсть часть 1', quizTitle='Тест на внимательноть', userName='Данила')
     window.show()
     sys.exit(app.exec())

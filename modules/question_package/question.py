@@ -7,7 +7,7 @@ class QuestionModes(Enum):
     INPUT = 'input'
 
 class Question:
-    def __init__(self, title, description=None, mode=None, variants=None, correct_answer=None, threshold_similarity=0.4, threshold_length_diff=2):
+    def __init__(self, title, description=None, mode=None, variants=None, correct_answer=None, threshold_similarity=0.5, threshold_length_diff=2):
         self.title = title
         self.description = description
         self.mode = mode
